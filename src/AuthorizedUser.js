@@ -4,11 +4,35 @@ import { withRouter } from 'react-router-dom'
 import { gql } from 'apollo-boost'
 import { ROOT_QUERY } from './App'
 
+
 const GITHUB_AUTH_MUTATION = gql`
   mutation githubAuth($code:String!) {
     githubAuth(code:$code) { token }
   }
 `
+
+const Me = ({ logout, requestCode, signingIn }) =>
+  <Query query={ROOT_QUERY}>
+    { ({ loading, data }) => data.me ?
+      <CurrentUser {...data.me} logout={logout} /> :
+      loading ?
+        <p>loading...</p> :
+        <button
+          onClick={requestCode}
+          disabled={signingIn}>
+            Sign In with Github
+        </button>
+    }
+  </Query>
+
+
+const CurrentUser = ({ name, avatar, logout }) =>
+  <div>
+    <img src={avatar} with={48} height={48} alt="" />
+    <h1>{name}</h1>
+    <button onClick={logout}>logout</button>
+  </div>
+
 
 class AuthorizedUser extends Component {
   state = { signingIn: false }
@@ -35,18 +59,17 @@ class AuthorizedUser extends Component {
 
   render() {
     return (
-      <Mutation mutation={GITHUB_AUTH_MUTATION}
+      <Mutation 
+        mutation={GITHUB_AUTH_MUTATION}
         update={this.authorizationComplete}
         refetchQueries={[{query: ROOT_QUERY}]}>
 
           {mutation => {
             this.githubAuthMutation = mutation
             return (
-              <button 
-                onClick={this.requestCode}
-                disabled={this.state.signingIn}>
-                Sign In with GitHub
-              </button>
+              <Me signingIn={this.state.singingIn}
+                  requestCode={this.requestCode}
+                  logout={() => localStorage.removeItem('token')} />
             )
           }}
       </Mutation>
